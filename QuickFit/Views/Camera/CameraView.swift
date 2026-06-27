@@ -44,7 +44,7 @@ struct CameraView: View {
                 .ignoresSafeArea()
             
             // Real-Time 2D Cloth Try-On Tracking Overlay
-            if let pose = viewModel.currentPose {
+            if let pose = viewModel.activeOverlayPose {
                 VirtualClothOverlayView(
                     pose: pose,
                     assetName: tryOnAssetName,

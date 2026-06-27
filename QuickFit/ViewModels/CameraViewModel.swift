@@ -16,7 +16,17 @@ final class CameraViewModel {
     var showSkeleton: Bool = false
     var trackingStatusMessage: String = "Stand back until full body is visible"
     var currentPose: DetectedBodyPose?
+    var lastValidPose: DetectedBodyPose?
     var activeGarment: Garment?
+    
+    var activeOverlayPose: DetectedBodyPose? {
+        if let current = currentPose,
+           let nk = current.neck, nk.confidence > 0.01,
+           ((current.leftShoulder?.confidence ?? 0) > 0.01 || (current.rightShoulder?.confidence ?? 0) > 0.01) {
+            return current
+        }
+        return lastValidPose
+    }
     
     let cameraService = CameraService()
     let visionService = VisionService()
@@ -29,7 +39,13 @@ final class CameraViewModel {
         
         visionService.onPoseDetected = { [weak self] pose in
             DispatchQueue.main.async {
-                self?.currentPose = pose
+                guard let self else { return }
+                self.currentPose = pose
+                if let p = pose,
+                   let nk = p.neck, nk.confidence > 0.02,
+                   ((p.leftShoulder?.confidence ?? 0) > 0.02 || (p.rightShoulder?.confidence ?? 0) > 0.02) {
+                    self.lastValidPose = p
+                }
             }
         }
         
@@ -61,6 +77,8 @@ final class CameraViewModel {
     
     func switchCamera() {
         isFrontCamera.toggle()
+        currentPose = nil
+        lastValidPose = nil
         cameraService.switchCamera(to: isFrontCamera ? .front : .back)
     }
     

@@ -7,6 +7,7 @@ import AVFoundation
 import SwiftUI
 
 struct CameraView: View {
+    var tryOnAssetName: String = "Blue-shirt"
     @State private var viewModel = CameraViewModel()
 
     var body: some View {
@@ -42,9 +43,23 @@ struct CameraView: View {
             CameraPreviewRepresentable(session: viewModel.cameraService.captureSession)
                 .ignoresSafeArea()
             
+            // Real-Time 2D Cloth Try-On Tracking Overlay
+            if let pose = viewModel.currentPose {
+                VirtualClothOverlayView(
+                    pose: pose,
+                    assetName: tryOnAssetName,
+                    isFrontCamera: viewModel.isFrontCamera
+                )
+                .ignoresSafeArea()
+                .animation(.interactiveSpring(response: 0.12, dampingFraction: 0.85), value: pose.neck?.point)
+            }
+            
             if viewModel.showSkeleton {
-                SkeletonView(pose: viewModel.currentPose)
-                    .ignoresSafeArea()
+                SkeletonView(
+                    pose: viewModel.currentPose,
+                    isFrontCamera: viewModel.isFrontCamera
+                )
+                .ignoresSafeArea()
                     .transition(.opacity.animation(.easeInOut))
             }
             

@@ -136,7 +136,7 @@ struct GarmentDetailView: View {
             }
         }
         .sheet(isPresented: $isShowingTryOn) {
-            CameraView()
+            CameraView(tryOnAssetName: assetName)
         }
     }
     

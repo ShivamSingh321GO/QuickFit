@@ -10,6 +10,29 @@ import Vision
 struct DetectedJoint {
     let point: CGPoint // Vision normalized (0...1), bottom-left origin
     let confidence: Float
+    
+    func screenPoint(in size: CGSize, isMirrored: Bool = true, videoAspect: CGFloat = 9.0 / 16.0) -> CGPoint {
+        var normX = point.x
+        if isMirrored {
+            normX = 1.0 - normX
+        }
+        let normY = 1.0 - point.y
+        
+        let viewAspect = size.width / size.height
+        if viewAspect < videoAspect {
+            let scaledWidth = size.height * videoAspect
+            let overflowX = scaledWidth - size.width
+            let sx = (normX * scaledWidth) - (overflowX / 2.0)
+            let sy = normY * size.height
+            return CGPoint(x: sx, y: sy)
+        } else {
+            let scaledHeight = size.width / videoAspect
+            let overflowY = scaledHeight - size.height
+            let sx = normX * size.width
+            let sy = (normY * scaledHeight) - (overflowY / 2.0)
+            return CGPoint(x: sx, y: sy)
+        }
+    }
 }
 
 struct DetectedBodyPose {

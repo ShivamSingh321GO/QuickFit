@@ -7,6 +7,7 @@ import SwiftUI
 
 struct SkeletonView: View {
     let pose: DetectedBodyPose?
+    var isFrontCamera: Bool = true
 
     var body: some View {
         Canvas { context, size in
@@ -14,8 +15,7 @@ struct SkeletonView: View {
             
             func pt(_ joint: DetectedJoint?) -> CGPoint? {
                 guard let joint, joint.confidence > 0.15 else { return nil }
-                // Vision normalized coordinates (bottom-left origin) -> SwiftUI view space (top-left origin)
-                return CGPoint(x: joint.point.x * size.width, y: (1.0 - joint.point.y) * size.height)
+                return joint.screenPoint(in: size, isMirrored: isFrontCamera)
             }
             
             let neck = pt(pose.neck)

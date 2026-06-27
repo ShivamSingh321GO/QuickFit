@@ -70,10 +70,10 @@ final class CameraService: NSObject {
                 }
             }
             
-            // Mirror front camera output connection
+            // Keep video output unmirrored so sensor space matches Vision normalized coordinates 1:1
             if let connection = self.videoOutput.connection(with: .video) {
                 if connection.isVideoMirroringSupported {
-                    connection.isVideoMirrored = (position == .front)
+                    connection.isVideoMirrored = false
                 }
                 if connection.isVideoOrientationSupported {
                     connection.videoOrientation = .portrait

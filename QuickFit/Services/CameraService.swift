@@ -14,7 +14,10 @@ final class CameraService: NSObject {
     private let videoOutput = AVCaptureVideoDataOutput()
     
     var onFrameCaptured: ((CMSampleBuffer) -> Void)?
+    var onSnapshotCaptured: ((UIImage) -> Void)?
     private var activeVideoInput: AVCaptureDeviceInput?
+    private var requestSnapshot = false
+    private var snapshotIsFrontCamera = true
 
     override init() {
         super.init()
@@ -102,6 +105,13 @@ final class CameraService: NSObject {
         configureSession(position: position)
     }
     
+    func takeSnapshot(isFrontCamera: Bool) {
+        sessionQueue.async { [weak self] in
+            self?.snapshotIsFrontCamera = isFrontCamera
+            self?.requestSnapshot = true
+        }
+    }
+    
     private func cameraDevice(for position: AVCaptureDevice.Position) -> AVCaptureDevice? {
         if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position) {
             return device
@@ -113,5 +123,21 @@ final class CameraService: NSObject {
 extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         onFrameCaptured?(sampleBuffer)
+        
+        if requestSnapshot {
+            requestSnapshot = false
+            let isFront = snapshotIsFrontCamera
+            if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
+                let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+                let context = CIContext()
+                if let cgImage = context.createCGImage(ciImage, from: ciImage.extent) {
+                    let orientation: UIImage.Orientation = isFront ? .upMirrored : .up
+                    let uiImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: orientation)
+                    DispatchQueue.main.async { [weak self] in
+                        self?.onSnapshotCaptured?(uiImage)
+                    }
+                }
+            }
+        }
     }
 }

@@ -19,6 +19,7 @@ extension Color {
 }
 
 struct AppTheme {
+    static let accent = Color(hex: "E056FD")
     static let backgroundGradient = LinearGradient(
         colors: [
             Color(hex: "08080D"),

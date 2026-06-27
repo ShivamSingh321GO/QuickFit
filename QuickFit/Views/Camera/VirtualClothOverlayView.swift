@@ -122,3 +122,26 @@ struct VirtualClothOverlayView: View {
         )
     }
 }
+
+struct CompositeSnapshotView: View {
+    let cameraImage: UIImage
+    let pose: DetectedBodyPose
+    let assetName: String
+    let isFrontCamera: Bool
+    
+    var body: some View {
+        ZStack {
+            Image(uiImage: cameraImage)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+            
+            VirtualClothOverlayView(
+                pose: pose,
+                assetName: assetName,
+                isFrontCamera: isFrontCamera
+            )
+        }
+        .frame(width: cameraImage.size.width, height: cameraImage.size.height)
+        .clipped()
+    }
+}

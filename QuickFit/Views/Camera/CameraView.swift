@@ -63,6 +63,11 @@ struct CameraView: View {
                     .transition(.opacity.animation(.easeInOut))
             }
             
+            if viewModel.flashScreen {
+                Color.white.ignoresSafeArea()
+                    .transition(.opacity)
+            }
+            
             // Top guidance badge
             VStack {
                 HStack {
@@ -90,7 +95,7 @@ struct CameraView: View {
                     }
                     
                     Button {
-                        // Capture snapshot flow (Feature 2 hook)
+                        viewModel.triggerCapture(assetName: tryOnAssetName)
                     } label: {
                         ZStack {
                             Circle()
@@ -115,6 +120,11 @@ struct CameraView: View {
                 .padding(.bottom, 32)
             }
         }
+        .sheet(isPresented: $viewModel.showSnapshotPreview) {
+            if let image = viewModel.capturedSnapshot {
+                SnapshotPreviewSheet(image: image, isPresented: $viewModel.showSnapshotPreview)
+            }
+        }
     }
     
     private var permissionDeniedLayout: some View {
@@ -127,6 +137,73 @@ struct CameraView: View {
                 viewModel.openSettings()
             }
             .buttonStyle(.borderedProminent)
+            .tint(AppTheme.accent)
         }
+    }
+}
+
+struct SnapshotPreviewSheet: View {
+    let image: UIImage
+    @Binding var isPresented: Bool
+    @State private var showSaveSuccess = false
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .shadow(color: .white.opacity(0.15), radius: 15)
+                        .padding()
+                    
+                    HStack(spacing: 16) {
+                        Button {
+                            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                            withAnimation {
+                                showSaveSuccess = true
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                withAnimation { showSaveSuccess = false }
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: showSaveSuccess ? "checkmark.circle.fill" : "square.and.arrow.down")
+                                Text(showSaveSuccess ? "Saved!" : "Save to Photos")
+                            }
+                            .font(.headline)
+                            .foregroundStyle(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(showSaveSuccess ? Color.green : Color.white, in: Capsule())
+                        }
+                        
+                        ShareLink(item: Image(uiImage: image), preview: SharePreview("QuickFit Virtual Try-On", image: Image(uiImage: image))) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(width: 56, height: 56)
+                                .background(Color.white.opacity(0.2), in: Circle())
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 20)
+                }
+            }
+            .navigationTitle("Virtual Try-On Click")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        isPresented = false
+                    }
+                    .foregroundStyle(.white)
+                }
+            }
+        }
+        .presentationDetents([.large])
     }
 }

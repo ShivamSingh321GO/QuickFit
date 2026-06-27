@@ -19,6 +19,11 @@ final class CameraViewModel {
     var lastValidPose: DetectedBodyPose?
     var activeGarment: Garment?
     
+    var capturedSnapshot: UIImage?
+    var showSnapshotPreview: Bool = false
+    var flashScreen: Bool = false
+    private var currentCaptureAssetName: String?
+    
     var activeOverlayPose: DetectedBodyPose? {
         if let current = currentPose,
            let nk = current.neck, nk.confidence > 0.01,
@@ -35,6 +40,11 @@ final class CameraViewModel {
         cameraService.onFrameCaptured = { [weak self] sampleBuffer in
             guard let self else { return }
             self.visionService.processFrame(sampleBuffer)
+        }
+        
+        cameraService.onSnapshotCaptured = { [weak self] cameraImage in
+            guard let self else { return }
+            self.processSnapshotComposite(cameraImage: cameraImage)
         }
         
         visionService.onPoseDetected = { [weak self] pose in
@@ -80,6 +90,44 @@ final class CameraViewModel {
         currentPose = nil
         lastValidPose = nil
         cameraService.switchCamera(to: isFrontCamera ? .front : .back)
+    }
+    
+    func triggerCapture(assetName: String) {
+        self.currentCaptureAssetName = assetName
+        withAnimation(.easeOut(duration: 0.1)) {
+            flashScreen = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeIn(duration: 0.15)) {
+                self.flashScreen = false
+            }
+        }
+        cameraService.takeSnapshot(isFrontCamera: isFrontCamera)
+    }
+    
+    @MainActor
+    private func processSnapshotComposite(cameraImage: UIImage) {
+        guard let pose = activeOverlayPose, let assetName = currentCaptureAssetName else {
+            self.capturedSnapshot = cameraImage
+            self.showSnapshotPreview = true
+            return
+        }
+        
+        let compositeView = CompositeSnapshotView(
+            cameraImage: cameraImage,
+            pose: pose,
+            assetName: assetName,
+            isFrontCamera: isFrontCamera
+        )
+        
+        let renderer = ImageRenderer(content: compositeView)
+        renderer.scale = 1.0
+        if let compositedImage = renderer.uiImage {
+            self.capturedSnapshot = compositedImage
+        } else {
+            self.capturedSnapshot = cameraImage
+        }
+        self.showSnapshotPreview = true
     }
     
     func saveBiometricSnapshot(context: ModelContext) -> BodyMeasurement? {

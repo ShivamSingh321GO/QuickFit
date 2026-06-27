@@ -22,7 +22,7 @@ final class CameraViewModel {
     var capturedSnapshot: UIImage?
     var showSnapshotPreview: Bool = false
     var flashScreen: Bool = false
-    private var currentCaptureAssetName: String?
+    var currentCaptureAssetName: String?
     
     var activeOverlayPose: DetectedBodyPose? {
         if let current = currentPose,
@@ -107,7 +107,7 @@ final class CameraViewModel {
     
     @MainActor
     private func processSnapshotComposite(cameraImage: UIImage) {
-        guard let pose = activeOverlayPose, let assetName = currentCaptureAssetName else {
+        guard let pose = activeOverlayPose, let assetName = currentCaptureAssetName, assetName != "None" else {
             self.capturedSnapshot = cameraImage
             self.showSnapshotPreview = true
             return

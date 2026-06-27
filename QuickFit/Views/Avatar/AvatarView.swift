@@ -7,11 +7,13 @@ import SwiftData
 import SwiftUI
 
 struct AvatarView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Avatar.createdAt, order: .reverse) private var avatars: [Avatar]
     @State private var viewModel = AvatarViewModel()
+    @State private var showCamera = false
     
     private let columns = [
-        GridItem(.adaptive(minimum: 140), spacing: 16)
+        GridItem(.adaptive(minimum: 150), spacing: 16)
     ]
 
     var body: some View {
@@ -25,17 +27,26 @@ struct AvatarView: View {
                         ContentUnavailableView(
                             "No Avatars Created",
                             systemImage: "person.crop.artframe",
-                            description: Text("Choose Flow 1 (Photo) or Flow 2 (Skeleton) to create your stylized avatar.")
+                            description: Text("Tap the camera icon above to capture your body pose and create your stylized avatar.")
                         )
                         .foregroundStyle(.white)
                         .padding(.top, 60)
                     } else {
-                        LazyVGrid(columns: columns, spacing: 16) {
-                            ForEach(avatars) { avatar in
-                                avatarCard(for: avatar)
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Your Created Avatars")
+                                .font(.title2.weight(.bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.top, 16)
+                            
+                            LazyVGrid(columns: columns, spacing: 16) {
+                                ForEach(avatars) { avatar in
+                                    avatarCard(for: avatar)
+                                }
                             }
+                            .padding(.horizontal, 16)
                         }
-                        .padding(16)
+                        .padding(.bottom, 24)
                     }
                 }
             }
@@ -43,18 +54,16 @@ struct AvatarView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button("Flow 1: Photo Based", systemImage: "camera") {
-                            viewModel.startCreation(flow: "Photo")
-                        }
-                        Button("Flow 2: Skeleton Based", systemImage: "figure.walk") {
-                            viewModel.startCreation(flow: "Skeleton")
-                        }
+                    Button {
+                        showCamera = true
                     } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "camera.fill")
                             .foregroundStyle(.white)
                     }
                 }
+            }
+            .sheet(isPresented: $showCamera) {
+                CameraView()
             }
             .sheet(isPresented: $viewModel.isShowingCreationFlow) {
                 NavigationStack {
@@ -77,27 +86,40 @@ struct AvatarView: View {
     
     @ViewBuilder
     private func avatarCard(for avatar: Avatar) -> some View {
-        VStack(alignment: .leading) {
-            if let uiImage = UIImage(data: avatar.imageData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 160)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            } else {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(0.1))
-                    .frame(height: 160)
-                    .overlay {
-                        Image(systemName: "person.fill")
-                            .foregroundStyle(.white.opacity(0.6))
-                    }
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack(alignment: .bottomLeading) {
+                if let uiImage = UIImage(data: avatar.imageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 180)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                } else {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 180)
+                        .overlay {
+                            Image(systemName: "person.fill")
+                                .foregroundStyle(.white.opacity(0.6))
+                        }
+                }
+                
+                Text(avatar.styleName)
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .foregroundStyle(.white)
+                    .padding(8)
             }
-            
-            Text(avatar.styleName)
-                .font(.caption.bold())
-                .foregroundStyle(.white)
-                .padding(.top, 4)
+            .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+        }
+        .contextMenu {
+            Button(role: .destructive) {
+                modelContext.delete(avatar)
+            } label: {
+                Label("Delete Avatar", systemImage: "trash")
+            }
         }
     }
 }

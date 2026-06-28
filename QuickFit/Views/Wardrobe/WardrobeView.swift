@@ -10,11 +10,28 @@ struct WardrobeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Garment.createdAt, order: .reverse) private var savedGarments: [Garment]
     @State private var viewModel = WardrobeViewModel()
+    @State private var showFavorites = false
     
     private let columns = [
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
     ]
+
+    private let categories = [
+        "All", "Smart Casual", "Eco Luxury", "Heritage Casual", "Modern Basic", "Active Outdoor",
+        "Tops", "Bottoms", "Shoes", "Accessories"
+    ]
+    
+    private var filteredSavedGarments: [Garment] {
+        var result = savedGarments
+        if viewModel.selectedCategory != "All" {
+            result = result.filter { $0.category.localizedCaseInsensitiveContains(viewModel.selectedCategory) }
+        }
+        if !viewModel.searchText.isEmpty {
+            result = result.filter { $0.name.localizedCaseInsensitiveContains(viewModel.searchText) }
+        }
+        return result
+    }
 
     var body: some View {
         NavigationStack {
@@ -23,52 +40,105 @@ struct WardrobeView: View {
                 AppTheme.backgroundGradient
                     .ignoresSafeArea()
                 
-                ScrollView {
-                    LazyVGrid(columns: columns, spacing: 24) {
-                        // Display user's saved items or mockup sample items
-                        if savedGarments.isEmpty {
-                            ForEach(Array(viewModel.filteredCards.enumerated()), id: \.element.id) { index, card in
-                                NavigationLink {
-                                    GarmentDetailView(
-                                        name: card.name,
-                                        category: card.category,
-                                        rating: card.rating,
-                                        description: card.description,
-                                        weather: card.weather,
-                                        temp: card.temp,
-                                        event: card.event,
-                                        assetName: card.assetName,
-                                        gradientIndex: index
-                                    )
+                VStack(spacing: 0) {
+                    // Category Filter Pills (Bubble style)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(categories, id: \.self) { category in
+                                Button {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                        viewModel.selectedCategory = category
+                                    }
                                 } label: {
-                                    mockupProductCard(for: card, index: index)
+                                    Text(category)
+                                        .font(.subheadline.weight(.semibold))
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            Capsule()
+                                                .fill(viewModel.selectedCategory == category ? Color("AccentColor") : Color.white.opacity(0.15))
+                                        )
+                                        .foregroundStyle(viewModel.selectedCategory == category ? .black : .white)
                                 }
-                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                    }
+                    
+                    ScrollView {
+                        if savedGarments.isEmpty {
+                            let cards = viewModel.filteredCards
+                            if cards.isEmpty {
+                                ContentUnavailableView(
+                                    "No Matching Items",
+                                    systemImage: "hanger",
+                                    description: Text("No items found matching \"\(viewModel.selectedCategory)\".")
+                                )
+                                .foregroundStyle(.white)
+                                .padding(.top, 60)
+                            } else {
+                                LazyVGrid(columns: columns, spacing: 24) {
+                                    ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+                                        NavigationLink {
+                                            GarmentDetailView(
+                                                name: card.name,
+                                                category: card.category,
+                                                rating: card.rating,
+                                                description: card.description,
+                                                weather: card.weather,
+                                                temp: card.temp,
+                                                event: card.event,
+                                                assetName: card.assetName,
+                                                gradientIndex: index
+                                            )
+                                        } label: {
+                                            mockupProductCard(for: card, index: index)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.top, 12)
+                                .padding(.bottom, 32)
                             }
                         } else {
-                            ForEach(Array(savedGarments.enumerated()), id: \.element.id) { index, garment in
-                                NavigationLink {
-                                    GarmentDetailView(
-                                        name: garment.name,
-                                        category: garment.category,
-                                        rating: "4.9",
-                                        description: "Personal garment digitized via Vision AI background segmentation. Secured locally in your QuickFit catalog.",
-                                        weather: "Custom Fit",
-                                        temp: "All-Season",
-                                        event: "Daily Wear",
-                                        assetName: garment.assetName ?? "Versity-Jacket",
-                                        gradientIndex: index
-                                    )
-                                } label: {
-                                    savedGarmentCard(for: garment, index: index)
+                            let garments = filteredSavedGarments
+                            if garments.isEmpty {
+                                ContentUnavailableView(
+                                    "No Matching Items",
+                                    systemImage: "hanger",
+                                    description: Text("No items found matching \"\(viewModel.selectedCategory)\".")
+                                )
+                                .foregroundStyle(.white)
+                                .padding(.top, 60)
+                            } else {
+                                LazyVGrid(columns: columns, spacing: 24) {
+                                    ForEach(Array(garments.enumerated()), id: \.element.id) { index, garment in
+                                        NavigationLink {
+                                            GarmentDetailView(
+                                                name: garment.name,
+                                                category: garment.category,
+                                                rating: "4.9",
+                                                description: "Personal garment digitized via Vision AI background segmentation. Secured locally in your QuickFit catalog.",
+                                                weather: "Custom Fit",
+                                                temp: "All-Season",
+                                                event: "Daily Wear",
+                                                assetName: garment.assetName ?? "Versity-Jacket",
+                                                gradientIndex: index
+                                            )
+                                        } label: {
+                                            savedGarmentCard(for: garment, index: index)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
                                 }
-                                .buttonStyle(.plain)
+                                .padding(.horizontal, 16)
+                                .padding(.top, 12)
+                                .padding(.bottom, 32)
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 32)
                 }
             }
             .navigationTitle("Wardrobe")
@@ -77,15 +147,14 @@ struct WardrobeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        viewModel.isShowingAddGarment = true
+                        showFavorites = true
                     } label: {
-                        Image(systemName: "plus")
-                            .foregroundStyle(.white)
+                        Image(systemName: "heart.fill")
                     }
                 }
             }
-            .sheet(isPresented: $viewModel.isShowingAddGarment) {
-                scannerSheet
+            .sheet(isPresented: $showFavorites) {
+                FavoritesView(viewModel: viewModel)
             }
         }
     }
@@ -121,16 +190,6 @@ struct WardrobeView: View {
                     .scaledToFit()
                     .padding(8)
             }
-            .overlay(alignment: .topLeading) {
-                Text(card.category.uppercased())
-                    .font(.system(size: 8.5, weight: .heavy, design: .default))
-                    .foregroundStyle(Color("AccentColor"))
-                    .tracking(0.6)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.55), in: Capsule())
-                    .padding(12)
-            }
             .overlay(alignment: .topTrailing) {
                 Button {
                     viewModel.toggleFavorite(for: card.id)
@@ -144,13 +203,21 @@ struct WardrobeView: View {
                 .padding(12)
             }
             
-            VStack(alignment: .leading, spacing: 3) {
-                Text(card.name.uppercased())
-                    .font(.system(.subheadline, design: .default).weight(.heavy))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(card.category.uppercased())
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color("AccentColor"))
+                    .tracking(0.8)
+                
+                Text(card.name)
+                    .font(.system(size: 14, weight: .bold, design: .default))
                     .foregroundStyle(.white)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .multilineTextAlignment(.leading)
+                    .frame(minHeight: 36, alignment: .topLeading)
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 6)
         }
     }
     
@@ -168,16 +235,6 @@ struct WardrobeView: View {
                     .scaledToFit()
                     .padding(8)
             }
-            .overlay(alignment: .topLeading) {
-                Text(garment.category.uppercased())
-                    .font(.system(size: 8.5, weight: .heavy, design: .default))
-                    .foregroundStyle(Color("AccentColor"))
-                    .tracking(0.6)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.55), in: Capsule())
-                    .padding(12)
-            }
             .overlay(alignment: .topTrailing) {
                 Button {
                     // toggle favorite
@@ -191,32 +248,21 @@ struct WardrobeView: View {
                 .padding(12)
             }
             
-            VStack(alignment: .leading, spacing: 3) {
-                Text(garment.name.uppercased())
-                    .font(.system(.subheadline, design: .default).weight(.heavy))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(garment.category.uppercased())
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color("AccentColor"))
+                    .tracking(0.8)
+                
+                Text(garment.name)
+                    .font(.system(size: 14, weight: .bold, design: .default))
                     .foregroundStyle(.white)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .multilineTextAlignment(.leading)
+                    .frame(minHeight: 36, alignment: .topLeading)
             }
-            .padding(.horizontal, 4)
-        }
-    }
-    
-    // MARK: - Sheets
-    
-    private var scannerSheet: some View {
-        NavigationStack {
-            ContentUnavailableView(
-                "Garment Scanner",
-                systemImage: "camera.viewfinder",
-                description: Text("VNGenerateForegroundInstanceMask segmentation flow will be integrated here.")
-            )
-            .navigationTitle("Add Garment")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Dismiss") { viewModel.isShowingAddGarment = false }
-                }
-            }
+            .padding(.horizontal, 6)
         }
     }
 }

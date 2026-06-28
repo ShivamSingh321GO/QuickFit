@@ -8,9 +8,11 @@ import SwiftData
 import SwiftUI
 
 struct CameraView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedGarment: String
     @State private var viewModel = CameraViewModel()
     private let showGarmentPicker: Bool
+    let isFromWardrobe: Bool
     
     private let availableGarments = ["None", "Blue-shirt", "Green-Shirt", "Red-shirtCheck", "T-Shirt", "Green-FullSleeve"]
     
@@ -18,9 +20,11 @@ struct CameraView: View {
         if let assetName = tryOnAssetName {
             _selectedGarment = State(initialValue: assetName)
             self.showGarmentPicker = false
+            self.isFromWardrobe = true
         } else {
             _selectedGarment = State(initialValue: "Blue-shirt")
             self.showGarmentPicker = true
+            self.isFromWardrobe = false
         }
     }
 
@@ -191,7 +195,13 @@ struct CameraView: View {
         }
         .sheet(isPresented: $viewModel.showSnapshotPreview) {
             if let image = viewModel.capturedSnapshot {
-                SnapshotPreviewSheet(image: image, isPresented: $viewModel.showSnapshotPreview)
+                SnapshotPreviewSheet(
+                    image: image,
+                    isPresented: $viewModel.showSnapshotPreview,
+                    isFromWardrobe: isFromWardrobe
+                ) {
+                    dismiss()
+                }
             }
         }
     }
@@ -215,6 +225,8 @@ struct SnapshotPreviewSheet: View {
     @Environment(\.modelContext) private var modelContext
     let image: UIImage
     @Binding var isPresented: Bool
+    let isFromWardrobe: Bool
+    let onSaveSuccess: (() -> Void)?
     @State private var showSaveSuccess = false
     
     @State private var displayImage: UIImage
@@ -225,10 +237,12 @@ struct SnapshotPreviewSheet: View {
     
     private let styles = ["Original", "Vintage Film", "Cyber Neon", "Anime Pastel", "Golden Hour", "B&W Vogue"]
     
-    init(image: UIImage, isPresented: Binding<Bool>) {
+    init(image: UIImage, isPresented: Binding<Bool>, isFromWardrobe: Bool, onSaveSuccess: (() -> Void)? = nil) {
         self.image = image
         self._isPresented = isPresented
+        self.isFromWardrobe = isFromWardrobe
         self._displayImage = State(initialValue: image)
+        self.onSaveSuccess = onSaveSuccess
     }
     
     private func updateDisplayImage(style: String, removeBg: Bool) {
@@ -342,33 +356,56 @@ struct SnapshotPreviewSheet: View {
                     
                     HStack(spacing: 16) {
                         Button {
-                            UIImageWriteToSavedPhotosAlbum(displayImage, nil, nil, nil)
+                            if showSaveSuccess { return }
                             
-                            // Save created Avatar to SwiftData
-                            if let imageData = displayImage.jpegData(compressionQuality: 0.85) {
-                                let styleLabel = removeBackground ? "\(selectedStyle) ✨" : selectedStyle
-                                let newAvatar = Avatar(imageData: imageData, styleName: styleLabel, creationFlow: "Camera Studio")
-                                modelContext.insert(newAvatar)
-                                try? modelContext.save()
-                            }
+                            // Instantly update state
+                            showSaveSuccess = true
                             
-                            withAnimation {
-                                showSaveSuccess = true
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                withAnimation { showSaveSuccess = false }
+                            let imageToSave = displayImage
+                            let currentStyle = selectedStyle
+                            let isBgRemoved = removeBackground
+                            
+                            Task {
+                                if isFromWardrobe {
+                                    // Save try-on image directly to the phone's Photos library
+                                    UIImageWriteToSavedPhotosAlbum(imageToSave, nil, nil, nil)
+                                } else {
+                                    // Save base avatar directly to the app's database
+                                    let imageData = await Task.detached(priority: .userInitiated) {
+                                        imageToSave.jpegData(compressionQuality: 0.85)
+                                    }.value
+                                    
+                                    if let data = imageData {
+                                        let styleLabel = isBgRemoved ? "\(currentStyle) ✨" : currentStyle
+                                        let newAvatar = Avatar(imageData: data, styleName: styleLabel, creationFlow: "Camera Studio")
+                                        modelContext.insert(newAvatar)
+                                        try? modelContext.save()
+                                    }
+                                }
+                                
+                                // Wait 1 second (so the user sees "Saved!" state), then dismiss parent sheet
+                                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                                await MainActor.run {
+                                    onSaveSuccess?()
+                                }
+                                showSaveSuccess = false
                             }
                         } label: {
                             HStack {
                                 Image(systemName: showSaveSuccess ? "checkmark.circle.fill" : "square.and.arrow.down")
-                                Text(showSaveSuccess ? "Saved!" : "Save to Photos")
+                                Text(showSaveSuccess ? "Saved!" : (isFromWardrobe ? "Save to Photos" : "Save"))
+                                    .contentTransition(.numericText())
                             }
                             .font(.headline)
                             .foregroundStyle(.black)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                             .background(showSaveSuccess ? Color.green : Color.white, in: Capsule())
+                            .contentShape(Capsule())
                         }
+                        .buttonStyle(.plain)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showSaveSuccess)
+
                         
                         ShareLink(item: Image(uiImage: displayImage), preview: SharePreview("QuickFit Avatar", image: Image(uiImage: displayImage))) {
                             Image(systemName: "square.and.arrow.up")

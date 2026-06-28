@@ -24,7 +24,6 @@ struct ProductCardItem: Identifiable {
 final class WardrobeViewModel {
     var searchText: String = ""
     var selectedCategory: String = "All"
-    var isShowingAddGarment: Bool = false
     
     // Curated premium outfit cards with distinct editorial descriptions and event metadata
     var dummyCards: [ProductCardItem] = [
@@ -86,10 +85,14 @@ final class WardrobeViewModel {
     ]
     
     var filteredCards: [ProductCardItem] {
-        if searchText.isEmpty {
-            return dummyCards
+        var result = dummyCards
+        if selectedCategory != "All" {
+            result = result.filter { $0.category.localizedCaseInsensitiveContains(selectedCategory) }
         }
-        return dummyCards.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        if !searchText.isEmpty {
+            result = result.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+        return result
     }
     
     func toggleFavorite(for id: UUID) {

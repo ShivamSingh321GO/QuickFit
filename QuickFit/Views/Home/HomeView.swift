@@ -16,9 +16,9 @@ struct HomeView: View {
                 }
                 .tag(0)
             
-            CameraView()
+            CreationsView()
                 .tabItem {
-                    Label("Try-On", systemImage: "camera.fill")
+                    Label("Creations", systemImage: "sparkles.rectangle.stack.fill")
                 }
                 .tag(1)
             
@@ -27,12 +27,6 @@ struct HomeView: View {
                     Label("Avatars", systemImage: "person.crop.circle")
                 }
                 .tag(2)
-            
-            BodyMeasurementView()
-                .tabItem {
-                    Label("Stats", systemImage: "ruler")
-                }
-                .tag(3)
         }
         .tint(Color("AccentColor"))
         .preferredColorScheme(.dark)

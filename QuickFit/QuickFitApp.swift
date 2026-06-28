@@ -13,8 +13,7 @@ struct QuickFitApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Garment.self,
-            Avatar.self,
-            BodyMeasurement.self
+            Avatar.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

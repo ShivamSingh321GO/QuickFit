@@ -130,23 +130,7 @@ final class CameraViewModel {
         self.showSnapshotPreview = true
     }
     
-    func saveBiometricSnapshot(context: ModelContext) -> BodyMeasurement? {
-        guard let pose = currentPose,
-              let props = visionService.calculateProportions(from: pose) else {
-            return nil
-        }
-        
-        let estHeight = props.torsoHeight * 3.2 // Anthropometric estimation approximation
-        let measurement = BodyMeasurement(
-            shoulderWidth: props.shoulderWidth,
-            hipWidth: props.hipWidth,
-            torsoHeight: props.torsoHeight,
-            estimatedHeight: estHeight
-        )
-        context.insert(measurement)
-        try? context.save()
-        return measurement
-    }
+
     
     func openSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }

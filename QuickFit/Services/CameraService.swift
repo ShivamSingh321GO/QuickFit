@@ -43,12 +43,10 @@ final class CameraService: NSObject {
             self.captureSession.beginConfiguration()
             self.captureSession.sessionPreset = .high
             
-            // Remove existing inputs
             if let activeInput = self.activeVideoInput {
                 self.captureSession.removeInput(activeInput)
             }
             
-            // Add Device Input
             guard let camera = self.cameraDevice(for: position),
                   let deviceInput = try? AVCaptureDeviceInput(device: camera) else {
                 self.captureSession.commitConfiguration()
@@ -60,7 +58,6 @@ final class CameraService: NSObject {
                 self.activeVideoInput = deviceInput
             }
             
-            // Add Video Output if needed
             if !self.captureSession.outputs.contains(self.videoOutput) {
                 self.videoOutput.videoSettings = [
                     kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
@@ -73,7 +70,6 @@ final class CameraService: NSObject {
                 }
             }
             
-            // Keep video output unmirrored so sensor space matches Vision normalized coordinates 1:1
             if let connection = self.videoOutput.connection(with: .video) {
                 if connection.isVideoMirroringSupported {
                     connection.isVideoMirrored = false

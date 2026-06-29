@@ -62,7 +62,6 @@ struct CameraView: View {
             CameraPreviewRepresentable(session: viewModel.cameraService.captureSession)
                 .ignoresSafeArea()
             
-            // Real-Time 2D Cloth Try-On Tracking Overlay
             if selectedGarment != "None", let pose = viewModel.activeOverlayPose {
                 VirtualClothOverlayView(
                     pose: pose,
@@ -87,7 +86,6 @@ struct CameraView: View {
                     .transition(.opacity)
             }
             
-            // Top guidance badge
             VStack {
                 HStack {
                     Image(systemName: "person.fill.viewfinder")
@@ -101,7 +99,6 @@ struct CameraView: View {
                 
                 Spacer()
                 
-                // Instagram-style Garment Picker Carousel
                 if showGarmentPicker {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 16) {
@@ -154,7 +151,6 @@ struct CameraView: View {
                     .padding(.bottom, 12)
                 }
                 
-                // Bottom floating toolbar
                 HStack(spacing: 24) {
                     Button {
                         viewModel.toggleSkeleton()
@@ -294,7 +290,6 @@ struct SnapshotPreviewSheet: View {
                         }
                     }
                     
-                    // Background Removal Toggle Button
                     HStack {
                         Button {
                             let newValue = !removeBackground
@@ -320,7 +315,6 @@ struct SnapshotPreviewSheet: View {
                     }
                     .padding(.horizontal, 24)
                     
-                    // CoreImage Avatar Style Picker
                     VStack(alignment: .leading, spacing: 8) {
                         Text("AVATAR STYLE (COREIMAGE)")
                             .font(.caption.weight(.bold))
@@ -358,7 +352,6 @@ struct SnapshotPreviewSheet: View {
                         Button {
                             if showSaveSuccess { return }
                             
-                            // Instantly update state
                             showSaveSuccess = true
                             
                             let imageToSave = displayImage
@@ -367,10 +360,8 @@ struct SnapshotPreviewSheet: View {
                             
                             Task {
                                 if isFromWardrobe {
-                                    // Save try-on image directly to the phone's Photos library
                                     UIImageWriteToSavedPhotosAlbum(imageToSave, nil, nil, nil)
                                 } else {
-                                    // Save base avatar directly to the app's database
                                     let imageData = await Task.detached(priority: .userInitiated) {
                                         imageToSave.jpegData(compressionQuality: 0.85)
                                     }.value
@@ -383,7 +374,6 @@ struct SnapshotPreviewSheet: View {
                                     }
                                 }
                                 
-                                // Wait 1 second (so the user sees "Saved!" state), then dismiss parent sheet
                                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                                 await MainActor.run {
                                     onSaveSuccess?()

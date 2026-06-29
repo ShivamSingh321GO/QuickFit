@@ -60,7 +60,6 @@ struct CreationsGridView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Category Filter Pills
             if !creations.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {

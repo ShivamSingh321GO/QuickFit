@@ -2,7 +2,6 @@
 //  QuickFitApp.swift
 //  QuickFit
 //
-//  Created by shivam kumar singh on 6/26/26.
 //
 
 import SwiftUI
@@ -20,7 +19,6 @@ struct QuickFitApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            // Auto-recovery during dev: If migration fails due to schema changes, wipe old store and retry
             let url = modelConfiguration.url
             try? FileManager.default.removeItem(at: url)
             try? FileManager.default.removeItem(at: url.deletingPathExtension().appendingPathExtension("store-shm"))

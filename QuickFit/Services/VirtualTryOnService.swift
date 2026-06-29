@@ -10,7 +10,6 @@ import Vision
 final class VirtualTryOnService {
     static let shared = VirtualTryOnService()
     
-    // Hugging Face API
     private let hfQueueJoinURL = "https://yisol-idm-vton.hf.space/queue/join"
     private let hfQueueDataURL = "https://yisol-idm-vton.hf.space/queue/data"
     
@@ -18,15 +17,11 @@ final class VirtualTryOnService {
     
     private init() {}
     
-    /// Generates a Virtual Try-On image.
-    /// Priority: Hugging Face (IDM-VTON) → local Vision composite
     func generateTryOn(modelImage: UIImage, outfitImage: UIImage, clothType: String = "upper") async throws -> UIImage {
-        // 1. Try Hugging Face API (primary)
         if let result = try? await performHuggingFaceTryOn(modelImage: modelImage, outfitImage: outfitImage) {
             return result
         }
         
-        // 3. Local composite fallback
         return await performLocalComposite(modelImage: modelImage, outfitImage: outfitImage)
     }
     
@@ -38,7 +33,6 @@ final class VirtualTryOnService {
         
         let sessionHash = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
         
-        // 1. Join Queue
         guard let joinURL = URL(string: hfQueueJoinURL) else { return nil }
         var joinReq = URLRequest(url: joinURL)
         joinReq.httpMethod = "POST"
@@ -79,12 +73,10 @@ final class VirtualTryOnService {
             return nil
         }
         
-        // 2. Poll Event Stream
         guard let streamURL = URL(string: "\(hfQueueDataURL)?session_hash=\(sessionHash)") else { return nil }
         var streamReq = URLRequest(url: streamURL)
         streamReq.httpMethod = "GET"
         streamReq.setValue("text/event-stream", forHTTPHeaderField: "Accept")
-        // High timeout since it's a global queue!
         streamReq.timeoutInterval = 300.0
         
         let (asyncBytes, _) = try await URLSession.shared.bytes(for: streamReq)
@@ -105,7 +97,6 @@ final class VirtualTryOnService {
                            let url = imgDict["url"] as? String {
                             return try await downloadImage(from: url)
                         }
-                        // Break on failure
                         break
                     }
                 }

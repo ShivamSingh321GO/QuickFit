@@ -14,7 +14,6 @@ final class AvatarStylizationService {
     
     private init() {}
     
-    // Background Removal using Vision pipeline
     func removeBackground(from image: UIImage) async -> UIImage {
         guard let cgImage = image.cgImage else { return image }
         
@@ -39,7 +38,6 @@ final class AvatarStylizationService {
                     }
                 }
                 
-                // Fallback to robust Person Segmentation
                 let request = VNGeneratePersonSegmentationRequest()
                 request.qualityLevel = .accurate
                 request.outputPixelFormat = kCVPixelFormatType_OneComponent8
@@ -56,16 +54,13 @@ final class AvatarStylizationService {
                     let inputCIImage = CIImage(cgImage: cgImage)
                     var maskCIImage = CIImage(cvPixelBuffer: maskBuffer)
                     
-                    // Scale mask to input image dimensions
                     let scaleX = inputCIImage.extent.width / maskCIImage.extent.width
                     let scaleY = inputCIImage.extent.height / maskCIImage.extent.height
                     maskCIImage = maskCIImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
                     
-                    // Create composite blend
                     let filter = CIFilter.blendWithMask()
                     filter.inputImage = inputCIImage
                     
-                    // Create dark modern studio backdrop
                     let backdropColor = CIColor(red: 0.1, green: 0.12, blue: 0.18, alpha: 1.0)
                     let backdropImage = CIImage(color: backdropColor).cropped(to: inputCIImage.extent)
                     
@@ -88,7 +83,6 @@ final class AvatarStylizationService {
         }
     }
     
-    // CoreImage Premium Studio Filter Styles
     func applyStyle(_ style: String, to image: UIImage) -> UIImage {
         guard let cgImage = image.cgImage else { return image }
         let inputCIImage = CIImage(cgImage: cgImage)
@@ -96,7 +90,6 @@ final class AvatarStylizationService {
         
         switch style {
         case "Vintage Film":
-            // Warm Kodak 800 cinematic film look
             if let colorControls = CIFilter(name: "CIColorControls") {
                 colorControls.setValue(inputCIImage, forKey: kCIInputImageKey)
                 colorControls.setValue(1.15, forKey: kCIInputSaturationKey)
@@ -121,7 +114,6 @@ final class AvatarStylizationService {
             }
             
         case "Cyber Neon":
-            // High-energy vibrant Synthwave look
             if let colorControls = CIFilter(name: "CIColorControls") {
                 colorControls.setValue(inputCIImage, forKey: kCIInputImageKey)
                 colorControls.setValue(1.7, forKey: kCIInputSaturationKey)
@@ -138,7 +130,6 @@ final class AvatarStylizationService {
             }
             
         case "Anime Pastel":
-            // Dreamy soft pastel anime aesthetic
             if let shadowAdjust = CIFilter(name: "CIHighlightShadowAdjust") {
                 shadowAdjust.setValue(inputCIImage, forKey: kCIInputImageKey)
                 shadowAdjust.setValue(0.8, forKey: "inputHighlightAmount") // Soften highlights
@@ -164,7 +155,6 @@ final class AvatarStylizationService {
             }
             
         case "Golden Hour":
-            // Rich sunset warm glow
             if let temp = CIFilter(name: "CITemperatureAndTint") {
                 temp.setValue(inputCIImage, forKey: kCIInputImageKey)
                 temp.setValue(CIVector(x: 6500, y: 0), forKey: "inputNeutral")
@@ -181,7 +171,6 @@ final class AvatarStylizationService {
             }
             
         case "B&W Vogue":
-            // Editorial high-fashion monochrome
             if let mono = CIFilter(name: "CIPhotoEffectMono") {
                 mono.setValue(inputCIImage, forKey: kCIInputImageKey)
                 

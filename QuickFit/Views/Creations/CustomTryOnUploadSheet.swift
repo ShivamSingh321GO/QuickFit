@@ -39,7 +39,6 @@ struct CustomTryOnUploadSheet: View {
                         }
                         .padding(.top, 8)
                         
-                        // Cards Grid
                         HStack(alignment: .top, spacing: 16) {
                             PhotosPicker(selection: $modelPickerItem, matching: .images) {
                                 UploadCardView(
@@ -66,7 +65,6 @@ struct CustomTryOnUploadSheet: View {
                             Button {
                                 Task {
                                     isGenerating = true
-                                    // Simulate AI try-on composite/stylization
                                     try? await Task.sleep(nanoseconds: 1_800_000_000)
                                     if let base = modelImage {
                                         generatedResult = AvatarStylizationService.shared.applyStyle("Original", to: base)

@@ -26,7 +26,6 @@ struct GarmentDetailView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Hero Image Studio Container
                     ZStack {
                         RoundedRectangle(cornerRadius: 32, style: .continuous)
                             .fill(premiumDetailGradient)
@@ -46,7 +45,6 @@ struct GarmentDetailView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
                     
-                    // Title & Description Block
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text(category.uppercased())
@@ -78,7 +76,6 @@ struct GarmentDetailView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Metadata Attributes Pills Row
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             attributePill(title: "Weather", value: weather)
@@ -93,7 +90,6 @@ struct GarmentDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            // Native Bottom Accent Button
             Button {
                 isShowingTryOn = true
             } label: {
@@ -120,14 +116,12 @@ struct GarmentDetailView: View {
                     }
                     
                     Button {
-                        // edit
                     } label: {
                         Image(systemName: "pencil")
                             .foregroundStyle(.white)
                     }
                     
                     Button {
-                        // share
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .foregroundStyle(.white)

@@ -181,7 +181,6 @@ struct AvatarDetailSheet: View {
                         Spacer()
                         
                         HStack(spacing: 20) {
-                            // Delete Button
                             Button(role: .destructive) {
                                 modelContext.delete(avatar)
                                 try? modelContext.save()
@@ -194,7 +193,6 @@ struct AvatarDetailSheet: View {
                                     .background(Color.red.opacity(0.15), in: Circle())
                             }
                             
-                            // Retake Button
                             Button {
                                 dismiss()
                                 onRetake()
@@ -210,7 +208,6 @@ struct AvatarDetailSheet: View {
                                 .background(Color.white, in: Capsule())
                             }
                             
-                            // Save to Photos (Download) Button
                             Button {
                                 UIImageWriteToSavedPhotosAlbum(uiImage, nil, nil, nil)
                                 withAnimation { showSaveSuccess = true }

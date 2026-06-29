@@ -36,12 +36,10 @@ struct WardrobeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Rich Dark Theme Gradient Background
                 AppTheme.backgroundGradient
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Category Filter Pills (Bubble style)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 10) {
                             ForEach(categories, id: \.self) { category in
@@ -237,7 +235,6 @@ struct WardrobeView: View {
             }
             .overlay(alignment: .topTrailing) {
                 Button {
-                    // toggle favorite
                 } label: {
                     Image(systemName: "heart")
                         .font(.footnote.weight(.bold))

@@ -25,7 +25,6 @@ final class WardrobeViewModel {
     var searchText: String = ""
     var selectedCategory: String = "All"
     
-    // Curated premium outfit cards with distinct editorial descriptions and event metadata
     var dummyCards: [ProductCardItem] = [
         ProductCardItem(
             name: "Azure Utilitarian Oxford",
